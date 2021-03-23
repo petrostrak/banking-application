@@ -2,6 +2,8 @@ package app
 
 import (
 	"net/http"
+	"petrostrak/banking-application/domain"
+	"petrostrak/banking-application/service"
 
 	"github.com/gorilla/mux"
 )
@@ -15,12 +17,11 @@ func init() {
 }
 
 func urlMapping() {
-	// define routes
-	router.HandleFunc("/greet", greet).Methods(http.MethodGet)
-	router.HandleFunc("/customers", getAllCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/customers", createCustomer).Methods(http.MethodPost)
+	// wiring
+	ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
-	router.HandleFunc("/customers/{customer_id:[0-9]+}", getCustomer).Methods(http.MethodGet)
+	// define routes
+	router.HandleFunc("/customers", ch.getAllCustomers).Methods(http.MethodGet)
 
 	// starting the server
 	if err := http.ListenAndServe(":8000", router); err != nil {
