@@ -1,5 +1,7 @@
 package domain
 
+import "petrostrak/banking-application/errs"
+
 type Customer struct {
 	ID          string
 	Name        string
@@ -11,5 +13,5 @@ type Customer struct {
 
 type CustomerReposiroty interface {
 	FindAll() ([]Customer, error)
-	ByID(string) (*Customer, error)
+	ByID(string) (*Customer, *errs.AppError)
 }

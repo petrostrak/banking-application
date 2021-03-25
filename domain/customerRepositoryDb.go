@@ -3,6 +3,7 @@ package domain
 import (
 	"database/sql"
 	"log"
+	"petrostrak/banking-application/errs"
 	"petrostrak/banking-application/resources"
 	"time"
 
@@ -41,7 +42,7 @@ func (d CustomerRepositoryDb) FindAll() ([]Customer, error) {
 	return customers, nil
 }
 
-func (d CustomerRepositoryDb) ByID(id string) (*Customer, error) {
+func (d CustomerRepositoryDb) ByID(id string) (*Customer, *errs.AppError) {
 	customerSql := `select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id=?`
 
 	row := d.client.QueryRow(customerSql, id)
@@ -56,8 +57,11 @@ func (d CustomerRepositoryDb) ByID(id string) (*Customer, error) {
 		&c.Zipcode,
 		&c.Status,
 	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errs.NewNotFoundError("Customer not found")
+		}
 		log.Println("Error while scaning customer", err.Error())
-		return nil, err
+		return nil, errs.NewUnexpectedError("Unexpexted database error")
 	}
 	return &c, nil
 }
