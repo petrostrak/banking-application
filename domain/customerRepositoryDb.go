@@ -8,22 +8,23 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type CustomerRepositoryDb struct {
-	client *sql.DB
+	client *sqlx.DB
 }
 
 func (d CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError) {
-	var rows *sql.Rows
 	var err error
+	customers := make([]Customer, 0)
 
 	if status == "" {
 		findAllSql := `select customer_id, name, city, zipcode, date_of_birth, status from customers`
-		rows, err = d.client.Query(findAllSql)
+		err = d.client.Select(&customers, findAllSql)
 	} else {
 		findAllSql := `select customer_id, name, city, zipcode, date_of_birth, status from customers where status=?`
-		rows, err = d.client.Query(findAllSql, status)
+		err = d.client.Select(&customers, findAllSql, status)
 	}
 
 	if err != nil {
@@ -31,40 +32,14 @@ func (d CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError
 		return nil, errs.NewUnexpectedError("Error while quering customer table")
 	}
 
-	customers := make([]Customer, 0)
-	for rows.Next() {
-		var c Customer
-		if err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.City,
-			&c.DataOfBirth,
-			&c.Zipcode,
-			&c.Status,
-		); err != nil {
-			logger.Error("Error while reading rows" + err.Error())
-			return nil, errs.NewUnexpectedError("Error while reading rows")
-		}
-		customers = append(customers, c)
-	}
 	return customers, nil
 }
 
 func (d CustomerRepositoryDb) ByID(id string) (*Customer, *errs.AppError) {
+	var c Customer
 	customerSql := `select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id=?`
 
-	row := d.client.QueryRow(customerSql, id)
-
-	var c Customer
-
-	if err := row.Scan(
-		&c.ID,
-		&c.Name,
-		&c.City,
-		&c.DataOfBirth,
-		&c.Zipcode,
-		&c.Status,
-	); err != nil {
+	if err := d.client.Get(&c, customerSql, id); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errs.NewNotFoundError("Customer not found")
 		}
@@ -75,7 +50,7 @@ func (d CustomerRepositoryDb) ByID(id string) (*Customer, *errs.AppError) {
 }
 
 func NewCustomerRepositoryDB() CustomerRepositoryDb {
-	client, err := sql.Open("mysql", resources.MySQLCredentials)
+	client, err := sqlx.Open("mysql", resources.MySQLCredentials)
 	if err != nil {
 		panic(err)
 	}
