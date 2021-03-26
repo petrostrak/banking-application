@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"os"
 	"petrostrak/banking-application/domain"
+	"petrostrak/banking-application/resources"
 	"petrostrak/banking-application/service"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
@@ -30,7 +33,10 @@ func urlMapping() {
 	sanityCheck()
 	// wiring
 	// ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
-	ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryDB())}
+	dbClient := getDbClient()
+	customerRepositoryDb := domain.NewCustomerRepositoryDB(dbClient)
+	// accountRepositoryDb := domain.NewAccountRepository(dbClient)
+	ch := CustomerHandlers{service.NewCustomerService(customerRepositoryDb)}
 
 	// define routes
 	router.HandleFunc("/customers", ch.getAllCustomers).Methods(http.MethodGet)
@@ -42,4 +48,23 @@ func urlMapping() {
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", address, port), router); err != nil {
 		panic(err)
 	}
+}
+
+func getDbClient() *sqlx.DB {
+	// dbUser := os.Getenv("DB_USER")
+	// dbPasswd := os.Getenv("DB_PASSWD")
+	// dbAddr := os.Getenv("DB_ADDR")
+	// dbPort := os.Getenv("DB_PORT")
+	// dbName := os.Getenv("DB_Name")
+
+	// 	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPasswd, dbAddr, dbPort, dbName)
+	client, err := sqlx.Open("mysql", resources.MySQLCredentials)
+	if err != nil {
+		panic(err)
+	}
+	// See "Important settings" section.
+	client.SetConnMaxLifetime(time.Minute * 3)
+	client.SetMaxOpenConns(10)
+	client.SetMaxIdleConns(10)
+	return client
 }
