@@ -2,8 +2,8 @@ package domain
 
 import (
 	"database/sql"
-	"log"
 	"petrostrak/banking-application/errs"
+	"petrostrak/banking-application/logger"
 	"petrostrak/banking-application/resources"
 	"time"
 
@@ -27,7 +27,7 @@ func (d CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError
 	}
 
 	if err != nil {
-		log.Println("Error while quering customer table", err.Error())
+		logger.Error("Error while quering customer table" + err.Error())
 		return nil, errs.NewUnexpectedError("Error while quering customer table")
 	}
 
@@ -42,7 +42,7 @@ func (d CustomerRepositoryDb) FindAll(status string) ([]Customer, *errs.AppError
 			&c.Zipcode,
 			&c.Status,
 		); err != nil {
-			log.Println("Error while reading rows", err.Error())
+			logger.Error("Error while reading rows" + err.Error())
 			return nil, errs.NewUnexpectedError("Error while reading rows")
 		}
 		customers = append(customers, c)
@@ -68,7 +68,7 @@ func (d CustomerRepositoryDb) ByID(id string) (*Customer, *errs.AppError) {
 		if err == sql.ErrNoRows {
 			return nil, errs.NewNotFoundError("Customer not found")
 		}
-		log.Println("Error while scaning customer", err.Error())
+		logger.Error("Error while scaning customer" + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpexted database error")
 	}
 	return &c, nil
