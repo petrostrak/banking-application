@@ -1,6 +1,9 @@
 package domain
 
-import "petrostrak/banking-application/errs"
+import (
+	"petrostrak/banking-application/dto"
+	"petrostrak/banking-application/errs"
+)
 
 type Account struct {
 	AccountID   string
@@ -11,6 +14,12 @@ type Account struct {
 	Status      string
 }
 
-type AcountRepository interface {
-	Save(Account) (*Account, errs.AppError)
+func (a Account) ToNewAccountResponseDto() dto.NewAccountResponse {
+	return dto.NewAccountResponse{
+		a.AccountID,
+	}
+}
+
+type AccountRepository interface {
+	Save(Account) (*Account, *errs.AppError)
 }

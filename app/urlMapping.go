@@ -35,12 +35,15 @@ func urlMapping() {
 	// ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 	dbClient := getDbClient()
 	customerRepositoryDb := domain.NewCustomerRepositoryDB(dbClient)
+	accountRepositoryDb := domain.NewAccountRepositoryDB(dbClient)
 	// accountRepositoryDb := domain.NewAccountRepository(dbClient)
 	ch := CustomerHandlers{service.NewCustomerService(customerRepositoryDb)}
+	ah := AccountHandler{service.NewAccountService(accountRepositoryDb)}
 
 	// define routes
 	router.HandleFunc("/customers", ch.getAllCustomers).Methods(http.MethodGet)
 	router.HandleFunc("/customers/{customer_id:[0-9]+}", ch.getCustomer).Methods(http.MethodGet)
+	router.HandleFunc("/customers/{customer_id:[0-9]+}/account", ah.NewAccount).Methods(http.MethodPost)
 
 	// starting the server SERVER_ADDRESS=localhost SERVER_PORT=8282 ./banking-application
 	address := os.Getenv("SERVER_ADDRESS")
